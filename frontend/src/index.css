@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+/* Identidad visual del proyecto — ver .claude/skills/brand-palette.
+   Colores muestreados del isotipo (cruz dentro de un círculo abierto, con
+   degradado azul - violeta - vino). Fondo crema, superficies blancas,
+   tinta oscura. El vino de marca hace doble función como color de "EN VIVO". */
+@theme {
+  /* Azul de marca — acento primario, CTA, enlaces activos */
+  --color-azul-50: #eaf0f7;
+  --color-azul-100: #ccddee;
+  --color-azul-200: #9bbbd9;
+  --color-azul-500: #1c4f8c;
+  --color-azul-600: #0d3060;
+  --color-azul-700: #0a2650;
+
+  /* Violeta de marca — acento secundario / estados especiales (campeón) */
+  --color-viol-100: #e7d5e2;
+  --color-viol-500: #7c3a6b;
+  --color-viol-600: #5a1f4d;
+
+  /* Vino de marca — también estado EN VIVO */
+  --color-vino-50: #f7e9ec;
+  --color-vino-100: #eccdd3;
+  --color-vino-400: #c33b53;
+  --color-vino-500: #99122f;
+  --color-vino-600: #7d0f27;
+
+  /* Superficies y tinta */
+  --color-crema: #f7f5f4;
+  --color-panel: #ffffff;
+  --color-linea: #e5dfe0;
+  --color-linea-2: #d7cfd0;
+  --color-tinta: #1a1420;
+  --color-tinta-2: #4a4550;
+  --color-tinta-3: #736e7b;
+
+  --font-display: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --animate-pulse-live: pulse-live 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  font-family: var(--font-display);
+}
+
+body {
+  @apply bg-crema text-tinta antialiased;
+}
+
+/* Degradado de marca (el mismo que cruza el logo). */
+.bg-marca {
+  background-image: linear-gradient(90deg, #0d3060 0%, #5a1f4d 50%, #99122f 100%);
+}
+
+.text-marca {
+  background-image: linear-gradient(90deg, #0d3060 0%, #5a1f4d 50%, #99122f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Tablas con scroll horizontal en mobile en vez de romper el layout */
+.table-scroll {
+  @apply w-full overflow-x-auto;
+}

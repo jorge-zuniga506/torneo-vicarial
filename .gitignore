@@ -1,0 +1,30 @@
+# Dependencias / builds
+node_modules/
+dist/
+dist-ssr/
+
+# Entorno — NUNCA commitear (contienen keys, incl. la service_role)
+.env
+.env.*
+!.env.example
+*.local
+
+# Herramientas locales de Claude Code (config personal / skills vendorizados)
+.claude/settings.local.json
+.mcp.json
+.agents/
+/.claude/skills/supabase
+/.claude/skills/supabase-postgres-best-practices
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Scratch / temporales
+*.tmp
