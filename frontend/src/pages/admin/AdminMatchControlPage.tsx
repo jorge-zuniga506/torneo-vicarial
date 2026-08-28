@@ -102,8 +102,11 @@ export function AdminMatchControlPage() {
     }
   }
 
-  if (loading) return <p className="py-24 text-center text-tinta-2">Cargando…</p>
-  if (error || !match)
+  // Solo mostramos la pantalla de error si NUNCA cargó el partido. Si ya lo
+  // tenemos y una relectura posterior falla, seguimos mostrando el último
+  // estado conocido (mejor eso que quedarse sin nada en medio del partido).
+  if (!match) {
+    if (loading) return <p className="py-24 text-center text-tinta-2">Cargando…</p>
     return (
       <div className="py-24 text-center text-tinta-2">
         <p>{error ?? 'Partido no encontrado.'}</p>
@@ -112,6 +115,7 @@ export function AdminMatchControlPage() {
         </Link>
       </div>
     )
+  }
 
   const minute = settings ? currentMatchMinute(match, settings, now) : null
   const elapsed = formatClock(elapsedNowSeconds(match, now)).replace('+', '')

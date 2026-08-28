@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { fetchMatchEvents } from '../services/matchEvents'
 import type { MatchEventWithPlayer } from '../services/matchEvents'
@@ -6,33 +6,42 @@ import type { MatchEventWithPlayer } from '../services/matchEvents'
 export function useMatchEvents(matchId: string | undefined) {
   const [events, setEvents] = useState<MatchEventWithPlayer[]>([])
   const [loading, setLoading] = useState(true)
-  const [nonce, setNonce] = useState(0)
+  const aliveRef = useRef(true)
 
-  const refetch = useCallback(() => setNonce((n) => n + 1), [])
+  const reload = useCallback(async () => {
+    if (!matchId) return
+    try {
+      const data = await fetchMatchEvents(matchId)
+      if (aliveRef.current) setEvents(data)
+    } catch {
+      // silencioso: el feed de eventos no es crítico
+    } finally {
+      if (aliveRef.current) setLoading(false)
+    }
+  }, [matchId])
 
   useEffect(() => {
     if (!matchId) return
-    let activo = true
-
-    const reload = () =>
-      fetchMatchEvents(matchId).then((data) => activo && setEvents(data))
-
-    reload().then(() => activo && setLoading(false))
+    aliveRef.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial
+    reload()
 
     const channel = supabase
       .channel(`match-events-${matchId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'match_events', filter: `match_id=eq.${matchId}` },
-        reload,
+        () => {
+          reload()
+        },
       )
       .subscribe()
 
     return () => {
-      activo = false
+      aliveRef.current = false
       supabase.removeChannel(channel)
     }
-  }, [matchId, nonce])
+  }, [matchId, reload])
 
-  return { events, loading, refetch }
+  return { events, loading, refetch: reload }
 }
