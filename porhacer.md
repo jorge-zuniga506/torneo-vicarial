@@ -184,6 +184,20 @@ Express + TS (`backend/`), Supabase (Postgres + Realtime + Auth), proyecto
       (diario, se activa solo al desplegar). Como apagarlos: ver README
       seccion "Como APAGAR el keep-alive".
 
+- [x] **Publicado**: GitHub `github.com/jorge-zuniga506/torneo-vicarial` +
+      Vercel (proyecto `torneo-vicarial`, prod `https://torneo-vicarial.vercel.app`).
+      Root Directory = `frontend` (via `vercel project update --root-directory`),
+      env vars `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` en los 3 entornos,
+      GitHub conectado -> auto-deploy en cada push. `/api/keep-alive` responde
+      OK en prod. Migracion extra `20260828212500_tighten_reset_match_grants`
+      (saca `reset_match` del alcance de anon).
+  Pendiente manual (no bloquea el login admin, que es email+password):
+    - Supabase -> Authentication -> URL Configuration: Site URL +
+      `https://torneo-vicarial.vercel.app/**` en Redirect URLs.
+    - Secrets `SUPABASE_URL` + `SUPABASE_ANON_KEY` en GitHub Actions (pinger
+      redundante; el de Vercel Cron ya corre).
+    - Opcional: Auth -> habilitar "Leaked password protection" (advisor WARN).
+
 ## Notas
 
 - Paleta (skill `brand-palette`): tokens `@theme` en `index.css` - `azul-*`
