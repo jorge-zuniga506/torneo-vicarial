@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Dices, RotateCcw, Trophy } from 'lucide-react'
-import { sileo } from 'sileo'
 import { useAuth } from '../../hooks/useAuth'
 import { useTournament } from '../../hooks/useTournament'
 import { useTeams } from '../../hooks/useTeams'
@@ -131,18 +130,9 @@ export function AdminRoulettePage() {
       setAssignments((prev) => [...prev, { nameId, slotLabel: nextSlot.label, name, teamId }])
 
       const done = assignments.length + 1
-      sileo.success({
-        title: `Equipo ${done}/${slots.length} asignado`,
-        description: `${nextSlot.label} — ${name}`,
-        position: 'top-center',
-      })
+      toast.ok(`Equipo ${done}/${slots.length} asignado`, `${nextSlot.label} — ${name}`)
       if (done === slots.length) {
-        sileo.success({
-          title: 'Sorteo completo',
-          description: `${slots.length} equipos ubicados en sus grupos`,
-          position: 'top-center',
-          duration: 6000,
-        })
+        toast.ok('Sorteo completo', `${slots.length} equipos ubicados en sus grupos`)
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo asignar.')

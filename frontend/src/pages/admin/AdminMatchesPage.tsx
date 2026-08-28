@@ -516,38 +516,47 @@ export function AdminMatchesPage() {
                     if (overId !== m.id) setOverId(m.id)
                   }}
                   onDrop={(e) => handleDrop(e, m.id)}
-                  className={`flex flex-wrap items-center gap-3 rounded-2xl border bg-panel px-3 py-3 transition-colors ${
+                  className={`flex flex-col gap-2 rounded-2xl border bg-panel p-3 transition-colors sm:flex-row sm:items-center sm:gap-3 ${
                     overId === m.id && dragId && dragId !== m.id
                       ? 'border-azul-600 ring-1 ring-azul-600/30'
                       : 'border-linea'
                   } ${dragId === m.id ? 'opacity-50' : ''}`}
                 >
-                  <span
-                    draggable
-                    onDragStart={(e) => {
-                      dragIdRef.current = m.id
-                      setDragId(m.id)
-                      e.dataTransfer.effectAllowed = 'move'
-                    }}
-                    onDragEnd={() => {
-                      setDragId(null)
-                      setOverId(null)
-                      dragIdRef.current = null
-                    }}
-                    className="flex-none cursor-grab text-tinta-3 hover:text-tinta-2 active:cursor-grabbing"
-                    title="Arrastrar para reordenar"
-                  >
-                    <GripVertical className="h-4 w-4" />
-                  </span>
+                  {/* Fila meta */}
+                  <div className="flex items-center gap-2 sm:flex-none">
+                    <span
+                      draggable
+                      onDragStart={(e) => {
+                        dragIdRef.current = m.id
+                        setDragId(m.id)
+                        e.dataTransfer.effectAllowed = 'move'
+                      }}
+                      onDragEnd={() => {
+                        setDragId(null)
+                        setOverId(null)
+                        dragIdRef.current = null
+                      }}
+                      className="flex-none cursor-grab touch-none text-tinta-3 hover:text-tinta-2 active:cursor-grabbing"
+                      title="Arrastrar para reordenar"
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </span>
 
-                  <span className="w-16 flex-none font-mono text-sm font-bold text-tinta">
-                    {formatKickoff(m.scheduled_at)}
-                  </span>
+                    <span className="w-14 flex-none font-mono text-sm font-bold text-tinta">
+                      {formatKickoff(m.scheduled_at)}
+                    </span>
 
-                  <span className="rounded-full bg-crema px-2 py-0.5 text-[11px] font-medium text-tinta-2">
-                    {STAGE_LABELS_SHORT[m.stage]}
-                    {m.group_id ? ` · ${groupsById.get(m.group_id)?.name ?? ''}` : ''}
-                  </span>
+                    <span className="rounded-full bg-crema px-2 py-0.5 text-[11px] font-medium text-tinta-2">
+                      {STAGE_LABELS_SHORT[m.stage]}
+                      {m.group_id ? ` · ${groupsById.get(m.group_id)?.name ?? ''}` : ''}
+                    </span>
+
+                    <span
+                      className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold sm:ml-0 ${STATUS_PILL[m.status]}`}
+                    >
+                      {STATUS_LABELS[m.status]}
+                    </span>
+                  </div>
 
                   <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-tinta">
                     <span className="truncate">{m.home_team?.name ?? 'Por definir'}</span>
@@ -555,13 +564,7 @@ export function AdminMatchesPage() {
                     <span className="truncate">{m.away_team?.name ?? 'Por definir'}</span>
                   </div>
 
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_PILL[m.status]}`}
-                  >
-                    {STATUS_LABELS[m.status]}
-                  </span>
-
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-none items-center gap-1 self-end sm:self-auto">
                     {confirmDelete === m.id ? (
                       <>
                         <span className="text-xs text-tinta-2">¿Eliminar?</span>

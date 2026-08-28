@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+/** Tile compacto de un número. Pensado para grillas de 2-6 columnas. */
 export function StatCard({
   label,
   value,
@@ -16,16 +17,16 @@ export function StatCard({
 }) {
   const body = (
     <div
-      className={`flex h-full flex-col gap-1 rounded-2xl border border-linea bg-panel p-4 ${
+      className={`flex h-full flex-col gap-1 rounded-xl border border-linea bg-panel p-3 ${
         to ? 'transition-colors hover:border-azul-600/40' : ''
       }`}
     >
-      <div className="flex items-center justify-between text-xs font-medium text-tinta-3 uppercase">
-        {label}
-        {Icon && <Icon className="h-4 w-4" />}
+      <div className="flex items-center justify-between gap-1 text-[11px] font-medium text-tinta-3 uppercase">
+        <span className="truncate">{label}</span>
+        {Icon && <Icon className="h-3.5 w-3.5 flex-none" />}
       </div>
-      <div className="text-2xl font-black text-tinta tabular-nums">{value}</div>
-      {hint && <p className="text-xs text-tinta-2">{hint}</p>}
+      <div className="text-xl font-black text-tinta tabular-nums">{value}</div>
+      {hint && <p className="text-[11px] leading-tight text-tinta-2">{hint}</p>}
     </div>
   )
 

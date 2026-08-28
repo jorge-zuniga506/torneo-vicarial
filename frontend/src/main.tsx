@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { Toaster } from 'sileo'
-import 'sileo/styles.css'
+import { Toaster } from 'sonner'
 import './index.css'
 import { AuthProvider } from './contexts/AuthContext'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { TournamentToasts } from './components/TournamentToasts'
 import { PublicLayout } from './layouts/PublicLayout'
 import { AdminLayout } from './layouts/AdminLayout'
@@ -25,10 +25,11 @@ import { AdminRoulettePage } from './pages/admin/AdminRoulettePage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <Toaster theme="light" position="top-center" />
-      <TournamentToasts />
-      <BrowserRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Toaster position="top-center" richColors closeButton toastOptions={{ duration: 3500 }} />
+        <TournamentToasts />
+        <BrowserRouter>
         <Routes>
           <Route element={<PublicLayout />}>
             <Route index element={<HomePage />} />
@@ -51,7 +52,8 @@ createRoot(document.getElementById('root')!).render(
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

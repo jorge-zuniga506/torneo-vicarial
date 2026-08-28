@@ -28,7 +28,8 @@ const NAV: { to: string; label: string; icon: ComponentType<{ className?: string
   { to: '/admin/roulette', label: 'Ruleta', icon: Dices },
 ]
 
-const linkBase = 'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors'
+const linkBase =
+  'flex flex-none items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors'
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `${linkBase} ${
     isActive ? 'bg-azul-600/10 text-azul-600' : 'text-tinta-2 hover:bg-crema hover:text-tinta'
@@ -84,7 +85,7 @@ export function AdminLayout() {
         <Link to="/" className="flex-none" title="Ir al sitio">
           <img src={logo} alt="" className="h-6 w-6 object-contain" />
         </Link>
-        <nav className="flex flex-1 gap-1 overflow-x-auto">
+        <nav className="no-scrollbar flex flex-1 gap-1 overflow-x-auto">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className={navLinkClass}>
               <Icon className="h-4 w-4 flex-none" />

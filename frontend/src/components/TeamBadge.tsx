@@ -20,9 +20,11 @@ export function TeamBadge({
   const initials = (team?.short_name ?? '?').slice(0, 3).toUpperCase()
 
   return (
-    <div className={`flex items-center gap-2.5 ${direction === 'col' ? 'flex-col text-center' : ''}`}>
+    <div
+      className={`flex min-w-0 items-center gap-2 ${direction === 'col' ? 'flex-col text-center' : ''}`}
+    >
       {team?.logo_url ? (
-        <img src={team.logo_url} alt={name} className={`${swatch} rounded-full object-cover`} />
+        <img src={team.logo_url} alt={name} className={`${swatch} flex-none rounded-full object-cover`} />
       ) : (
         <span
           className={`flex ${swatch} flex-none items-center justify-center rounded-full font-bold text-white`}
@@ -31,7 +33,9 @@ export function TeamBadge({
           {initials}
         </span>
       )}
-      <span className={`${text} font-semibold text-tinta`}>{name}</span>
+      <span className={`${text} min-w-0 truncate font-semibold text-tinta ${direction === 'col' ? 'max-w-full' : ''}`}>
+        {name}
+      </span>
     </div>
   )
 }

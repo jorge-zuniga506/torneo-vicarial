@@ -77,3 +77,12 @@ body {
 .table-scroll {
   @apply w-full overflow-x-auto;
 }
+
+/* Franja scrollable sin barra visible (navs en mobile) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
