@@ -17,9 +17,17 @@ import {
   STAGE_LABELS_SHORT,
   formatKickoff,
 } from '../../utils/matchLabels'
-import type { MatchStage, MatchStatus, MatchWithTeams } from '../../types/tournament'
+import type { MatchCategory, MatchStage, MatchStatus, MatchWithTeams } from '../../types/tournament'
 
-const STAGES: MatchStage[] = ['GROUP', 'QUARTERFINAL', 'SEMIFINAL', 'THIRD_PLACE', 'FINAL']
+const STAGES: MatchStage[] = [
+  'GROUP',
+  'QUARTERFINAL',
+  'SEMIFINAL',
+  'THIRD_PLACE',
+  'FINAL',
+  'EXHIBITION',
+]
+const CATEGORIES: MatchCategory[] = ['MASCULINO', 'FEMENINO']
 const STATUSES: MatchStatus[] = [
   'PROGRAMADO',
   'CALENTAMIENTO',
@@ -48,6 +56,7 @@ function minuteLabel(min: number): string {
 
 interface Draft {
   stage: MatchStage
+  category: MatchCategory
   group_id: string
   matchday: string
   home_team_id: string
@@ -62,6 +71,7 @@ function newDraft(): Draft {
   d.setMinutes(0, 0, 0)
   return {
     stage: 'GROUP',
+    category: 'MASCULINO',
     group_id: '',
     matchday: '',
     home_team_id: '',
@@ -75,6 +85,7 @@ function newDraft(): Draft {
 function toDraft(m: MatchWithTeams): Draft {
   return {
     stage: m.stage,
+    category: m.category,
     group_id: m.group_id ?? '',
     matchday: m.matchday?.toString() ?? '',
     home_team_id: m.home_team_id ?? '',
@@ -162,6 +173,7 @@ export function AdminMatchesPage() {
     setError('')
     const payload = {
       stage: draft.stage,
+      category: draft.category,
       group_id: draft.stage === 'GROUP' ? draft.group_id || null : null,
       matchday: draft.matchday ? Number(draft.matchday) : null,
       home_team_id: draft.home_team_id || null,
@@ -359,6 +371,24 @@ export function AdminMatchesPage() {
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-xs font-medium text-tinta-2">
+              Categoría
+              <select
+                value={draft.category}
+                onChange={(e) => setDraft({ ...draft, category: e.target.value as MatchCategory })}
+                className="rounded-lg border border-linea bg-crema px-3 py-2 text-sm text-tinta outline-none focus:border-azul-600"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c === 'FEMENINO' ? 'Femenino' : 'Masculino'}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[11px] font-normal text-tinta-3">
+                El femenino no cuenta para tablas ni cuadro.
+              </span>
             </label>
 
             {draft.stage === 'GROUP' ? (

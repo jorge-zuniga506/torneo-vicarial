@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { fetchMatchById } from '../services/matches'
@@ -22,6 +22,8 @@ const TOASTED: EventType[] = ['GOAL', 'START', 'HALFTIME', 'RESUME', 'END', 'YEL
 export function useTournamentToasts(tournamentId: string | undefined) {
   const seen = useRef<Set<string>>(new Set())
   const championAnnounced = useRef(false)
+
+  const channelId = useId().replace(/\W/g, '')
 
   useEffect(() => {
     if (!tournamentId) return
@@ -94,7 +96,7 @@ export function useTournamentToasts(tournamentId: string | undefined) {
     }
 
     const channel = supabase
-      .channel(`toasts-${tournamentId}`)
+      .channel(`toasts-${tournamentId}-${channelId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_events' }, onEvent)
       .on(
         'postgres_changes',
@@ -107,5 +109,5 @@ export function useTournamentToasts(tournamentId: string | undefined) {
       alive = false
       supabase.removeChannel(channel)
     }
-  }, [tournamentId])
+  }, [tournamentId, channelId])
 }

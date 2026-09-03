@@ -1,5 +1,13 @@
 import { TeamBadge } from './TeamBadge'
-import { STATUS_LABELS, STATUS_PILL, STAGE_LABELS_SHORT, formatKickoff, isLive } from '../utils/matchLabels'
+import { CategoryBadge } from './CategoryBadge'
+import {
+  STATUS_LABELS,
+  STATUS_PILL,
+  STAGE_LABELS_SHORT,
+  formatKickoff,
+  isLive,
+  isWomensMatch,
+} from '../utils/matchLabels'
 import type { MatchWithTeams } from '../types/tournament'
 
 /**
@@ -16,13 +24,16 @@ export function MatchRow({
   const live = isLive(match.status)
   const finished = match.status === 'FINALIZADO'
   const showScore = live || finished
-  const context = groupName
-    ? `Grupo ${groupName}`
-    : match.stage !== 'GROUP'
-      ? STAGE_LABELS_SHORT[match.stage]
-      : match.matchday
-        ? `Jornada ${match.matchday}`
-        : null
+  const womens = isWomensMatch(match)
+  const context = womens
+    ? null
+    : groupName
+      ? `Grupo ${groupName}`
+      : match.stage !== 'GROUP'
+        ? STAGE_LABELS_SHORT[match.stage]
+        : match.matchday
+          ? `Jornada ${match.matchday}`
+          : null
 
   return (
     <article
@@ -55,6 +66,7 @@ export function MatchRow({
       </div>
 
       <div className="flex flex-none items-center gap-2 pl-14 sm:pl-0">
+        {womens && <CategoryBadge category={match.category} />}
         {context && (
           <span className="rounded-full bg-crema px-2 py-0.5 text-[11px] font-medium text-tinta-2">
             {context}

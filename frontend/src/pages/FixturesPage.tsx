@@ -5,7 +5,7 @@ import { useTournament } from '../hooks/useTournament'
 import { useMatches } from '../hooks/useMatches'
 import { useGroups } from '../hooks/useGroups'
 import { MatchRow } from '../components/MatchRow'
-import { STAGE_LABELS_SHORT, isLive } from '../utils/matchLabels'
+import { STAGE_LABELS_SHORT, isLive, isWomensMatch } from '../utils/matchLabels'
 import type { MatchStage, MatchWithTeams } from '../types/tournament'
 
 type Tab = 'en-vivo' | 'proximos' | 'finalizados'
@@ -34,9 +34,11 @@ export function FixturesPage() {
 
   const stagesPresent = useMemo(() => {
     const set = new Set<MatchStage>()
-    for (const m of matches) if (m.stage !== 'GROUP') set.add(m.stage)
+    for (const m of matches) if (m.stage !== 'GROUP' && m.stage !== 'EXHIBITION') set.add(m.stage)
     return [...set]
   }, [matches])
+
+  const hasWomensMatch = useMemo(() => matches.some((m) => isWomensMatch(m)), [matches])
 
   const counts = useMemo(() => {
     const c: Record<Tab, number> = { 'en-vivo': 0, proximos: 0, finalizados: 0 }
@@ -50,6 +52,7 @@ export function FixturesPage() {
       if (filter === 'todos') return true
       if (filter.startsWith('group:')) return m.group_id === filter.slice(6)
       if (filter.startsWith('stage:')) return m.stage === filter.slice(6)
+      if (filter === 'cat:FEMENINO') return isWomensMatch(m)
       return true
     })
     .sort((a, b) =>
@@ -112,6 +115,7 @@ export function FixturesPage() {
         {chip('todos', 'Todos')}
         {groups.map((g) => chip(`group:${g.id}`, `Grupo ${g.name}`))}
         {stagesPresent.map((s) => chip(`stage:${s}`, STAGE_LABELS_SHORT[s]))}
+        {hasWomensMatch && chip('cat:FEMENINO', 'Femenino')}
       </div>
 
       {loading ? (

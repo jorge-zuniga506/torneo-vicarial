@@ -39,6 +39,10 @@ export function AdminRoulettePage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
+  // La ruleta opera sobre la competición masculina; los equipos femeninos
+  // (partido de exhibición) quedan fuera de sorteos de grupos/posiciones.
+  const rouletteTeams = useMemo(() => teams.filter((t) => t.category !== 'FEMENINO'), [teams])
+
   // --- modo "sorteo de posiciones" ---
   const [namesText, setNamesText] = useState('')
   const [assignments, setAssignments] = useState<Assignment[]>([])
@@ -89,7 +93,9 @@ export function AdminRoulettePage() {
   const simplePool: WheelItem[] =
     mode === 'players'
       ? players.filter((p) => !removed.has(p.id)).map((p) => ({ id: p.id, label: p.name }))
-      : teams.filter((t) => !removed.has(t.id)).map((t) => ({ id: t.id, label: t.short_name, color: t.color }))
+      : rouletteTeams
+          .filter((t) => !removed.has(t.id))
+          .map((t) => ({ id: t.id, label: t.short_name, color: t.color }))
 
   async function handlePositionResult(item: WheelItem) {
     if (!tournament || !nextSlot) return
@@ -98,7 +104,7 @@ export function AdminRoulettePage() {
     const name = item.label
     const nameId = item.id
     try {
-      const available = [...teams]
+      const available = [...rouletteTeams]
         .filter((t) => !usedTeamIds.has(t.id))
         .sort((a, b) => a.short_name.localeCompare(b.short_name))
       let teamId: string

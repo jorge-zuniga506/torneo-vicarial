@@ -25,6 +25,19 @@
   --color-vino-500: #99122f;
   --color-vino-600: #7d0f27;
 
+  /* Semáforo de estado — NO son colores de marca, se usan solo para indicar
+     "cómo va" un equipo/llave (clasifica / en disputa / eliminado). */
+  --color-ok-50: #e7f4ec;
+  --color-ok-100: #c6e6d1;
+  --color-ok-600: #1f7a44;
+  --color-ok-700: #155f34;
+  --color-warn-50: #fdf3e2;
+  --color-warn-100: #f6e2bd;
+  --color-warn-600: #9a6512;
+  --color-bad-50: #fdecec;
+  --color-bad-100: #f6cfcf;
+  --color-bad-600: #b42323;
+
   /* Superficies y tinta */
   --color-crema: #f7f5f4;
   --color-panel: #ffffff;
@@ -47,6 +60,75 @@
   50% {
     opacity: 0.4;
   }
+}
+
+/* Banners del modo TV (gol / tarjeta / estado) */
+@keyframes tv-pop {
+  0% {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes tv-card-drop {
+  0% {
+    transform: translateY(-40vh) rotate(-25deg);
+    opacity: 0;
+  }
+  70% {
+    transform: translateY(0) rotate(9deg);
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(0) rotate(4deg);
+  }
+  100% {
+    transform: translateY(0) rotate(7deg);
+    opacity: 1;
+  }
+}
+@keyframes tv-ball {
+  0% {
+    transform: rotate(-120deg) scale(0.2);
+    opacity: 0;
+  }
+  65% {
+    transform: rotate(12deg) scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+  }
+}
+.tv-pop {
+  animation: tv-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+.tv-card-drop {
+  animation: tv-card-drop 0.6s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes tv-confetti {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tv-ball {
+  animation: tv-ball 0.6s cubic-bezier(0.2, 0.85, 0.3, 1.2) both;
+}
+.tv-confetti {
+  animation: tv-confetti 0.5s ease both;
 }
 
 :root {

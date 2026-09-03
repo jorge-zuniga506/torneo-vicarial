@@ -37,8 +37,18 @@ export function useMatchEvents(matchId: string | undefined) {
       )
       .subscribe()
 
+    // Plan B: si el WebSocket de Realtime está bloqueado en esta red/dispositivo,
+    // igual refrescamos cada 15 s (y al volver la conexión / la pestaña).
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') reload()
+    }, 15000)
+    const onOnline = () => reload()
+    window.addEventListener('online', onOnline)
+
     return () => {
       aliveRef.current = false
+      window.clearInterval(poll)
+      window.removeEventListener('online', onOnline)
       supabase.removeChannel(channel)
     }
   }, [matchId, reload])

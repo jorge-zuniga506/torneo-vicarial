@@ -5,6 +5,7 @@ import { useTeams } from '../hooks/useTeams'
 import { useStandings } from '../hooks/useStandings'
 import { useGroups } from '../hooks/useGroups'
 import { TeamBadge } from '../components/TeamBadge'
+import { CategoryBadge } from '../components/CategoryBadge'
 
 export function TeamsPage() {
   const { tournament } = useTournament()
@@ -17,9 +18,11 @@ export function TeamsPage() {
   }
 
   const standingByTeam = new Map(standings.map((s) => [s.team_id, s]))
+  const mascTeams = teams.filter((t) => t.category !== 'FEMENINO')
+  const femTeams = teams.filter((t) => t.category === 'FEMENINO')
   const orderedGroupIds = [
     ...groups.map((g) => g.id),
-    ...(teams.some((t) => !t.group_id) ? [null] : []),
+    ...(mascTeams.some((t) => !t.group_id) ? [null] : []),
   ]
 
   return (
@@ -27,11 +30,11 @@ export function TeamsPage() {
       <div className="flex items-center gap-2">
         <Users2 className="h-5 w-5 text-azul-600" />
         <h1 className="text-2xl font-black text-tinta">Equipos</h1>
-        <span className="text-sm text-tinta-3">· {teams.length}</span>
+        <span className="text-sm text-tinta-3">· {mascTeams.length}</span>
       </div>
 
       {orderedGroupIds.map((groupId) => {
-        const groupTeams = teams.filter((t) => t.group_id === groupId)
+        const groupTeams = mascTeams.filter((t) => t.group_id === groupId)
         if (groupTeams.length === 0) return null
         return (
           <section key={groupId ?? 'sin-grupo'} className="flex flex-col gap-3">
@@ -87,6 +90,29 @@ export function TeamsPage() {
           </section>
         )
       })}
+
+      {femTeams.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-bold tracking-widest text-tinta-2 uppercase">
+            Partido femenino
+            <CategoryBadge category="FEMENINO" />
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {femTeams.map((team) => (
+              <div
+                key={team.id}
+                className="flex items-center justify-between rounded-2xl border border-linea bg-panel p-5"
+              >
+                <TeamBadge team={team} size="md" />
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: team.color ?? '#5a1f4d' }}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

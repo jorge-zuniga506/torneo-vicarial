@@ -149,10 +149,10 @@ frontend/src/
 ├── layouts/           PublicLayout (header/nav/footer) · AdminLayout (sidebar + guard)
 ├── lib/               supabase (cliente) · api (fetch al backend) · toast (sileo)
 ├── pages/             HomePage, TeamsPage, TeamDetailPage, FixturesPage,
-│   │                  StandingsPage, ChampionPage, NotFoundPage (404)
+│   │                  StandingsPage, BracketPage, ChampionPage, NotFoundPage (404)
 │   └── admin/         AdminLoginPage, AdminDashboardPage, AdminTeamsPage,
 │                      AdminPlayersPage, AdminMatchesPage, AdminMatchControlPage,
-│                      AdminRoulettePage
+│                      AdminStandingsPage, AdminRoulettePage
 ├── services/          Una por dominio: tournament, teams, players, matches,
 │                      matchEvents, matchControl, standings, groups,
 │                      playerStats, roulette
@@ -166,9 +166,11 @@ frontend/src/
 | ----------------------- | ----------------------------- |
 | `/`                     | Home (hero en vivo, tablas, goleadores, próximos) |
 | `/fixtures`             | Partidos: tabs En vivo / Próximos / Finalizados + filtros |
-| `/standings`            | Tablas de posiciones por grupo |
+| `/standings`            | Tablas de posiciones por grupo + clasificados a cuartos |
+| `/bracket`              | Cuadro de eliminación (QF → SF → final) |
 | `/teams` · `/teams/:id` | Equipos y detalle (plantel, resultados) |
 | `/champion`             | Pantalla de campeón           |
+| `/tv`                   | Modo TV: marcador deportivo persistente + banner de gol/final + overlay de tabla; botón "Salir" e indicador de conexión |
 | `*`                     | 404 de marca                  |
 | `/admin/login`          | Login                         |
 | `/admin`                | Resumen (contadores + estado del torneo) |
@@ -176,6 +178,7 @@ frontend/src/
 | `/admin/players`        | CRUD jugadores + capitán + stats |
 | `/admin/matches`        | CRUD partidos + reprogramar por drag & drop |
 | `/admin/matches/:id`    | **Control en vivo** (cronómetro, goles, tarjetas) |
+| `/admin/standings`      | Clasificación: desempate manual + **Sortear cuartos** |
 | `/admin/roulette`       | Ruleta: sorteo de posiciones / elegir equipo / elegir jugador |
 
 ### Seguridad
@@ -198,6 +201,13 @@ Cada hook de datos (`useMatches`, `useStandings`, `useTeams`, `useMatchEvents`,
 …) hace: **carga inicial** + **suscripción a `postgres_changes`** en su tabla.
 Ante cualquier `INSERT`/`UPDATE`/`DELETE`, vuelve a leer y React re-renderiza.
 No hace falta recargar la página.
+
+**Plan B (sondeo):** además del WebSocket, cada hook **re-consulta cada 15 s**
+(20 s `useTournament`) mientras la pestaña está visible, y al volver la conexión
+(`online`) o la pestaña. Así la app se actualiza aunque la red o el dispositivo
+bloqueen el WebSocket de Realtime. El nombre de canal lleva un sufijo único por
+instancia (`useId()`) para que un mismo hook usado dos veces en el árbol (p. ej.
+`/tv`) no comparta canal.
 
 Los hooks con `refetch` (`useMatch`, `useMatchEvents`) además fuerzan una
 relectura inmediata después de cada acción del admin, para no depender de que
@@ -225,6 +235,19 @@ Acciones (RPC): `start_match`, `pause_match`, `resume_match`, `start_halftime`,
 
 ---
 
+## Formato del torneo
+
+9 equipos masculinos + **1 partido femenino** de exhibición
+(`category='FEMENINO'`, `stage='EXHIBITION'`, no afecta tablas/cuadro/stats
+masculinas). 3 grupos de 3, todos contra todos. Clasifican **8 de 9** a
+cuartos: 2 por grupo (`qualifiers_per_group`) + 2 mejores terceros
+(`best_third_places`); el peor 3.º queda eliminado. Cuartos → semis → final →
+campeón (los ganadores avanzan solos por `*_source_match_id`). El sorteo de
+cuartos lo dispara el admin en `/admin/standings` (RPC `draw_quarterfinals`).
+
+Desempate en grupos: PTS → DG → GF → resultado entre los empatados (H2H) →
+`teams.manual_tiebreak` (flechas en `/admin/standings`) → nombre.
+
 ## Programación automática de horarios
 
 En `/admin/matches` la lista es cronológica y **se arrastra** cada partido de
@@ -233,6 +256,12 @@ la manija. Al soltar, se recalculan **todos** los horarios desde
 `tournament_settings.slot_minutes` (editable en la página), empujando fuera de
 la pausa (`break_start_time` / `break_end_time`). Lógica en
 `frontend/src/utils/schedule.ts`.
+
+El cronograma inicial (grupos 13:00–14:36, femenino 14:48, pausa 15:00–15:50,
+cuartos 15:50–16:26, semis 16:45/16:57, final 17:20, con huecos de preparación
+de 7 min antes de semis y final) se fijó una vez en la migración
+`seed_womens_match_and_reschedule`. Un "Recalcular horarios" normaliza esos
+huecos a `slot_minutes` uniforme.
 
 Nada está hardcodeado: cantidad de equipos, grupos, clasificados, duración de
 tiempos, horarios y desempates viven todos en `tournament_settings`.
@@ -345,11 +374,21 @@ sitio.
 
 Aplicadas en el proyecto (vía Supabase MCP / `apply_migration`):
 
-| Versión          | Nombre                                   |
-| ---------------- | ---------------------------------------- |
-| `20260828190920` | `add_slot_minutes_to_tournament_settings` |
-| `20260828192916` | `add_reset_match_function`               |
-| `20260828203813` | `add_keepalive`                          |
+| Versión          | Nombre                                     |
+| ---------------- | ------------------------------------------ |
+| `20260828190920` | `add_slot_minutes_to_tournament_settings`  |
+| `20260828192916` | `add_reset_match_function`                 |
+| `20260828203813` | `add_keepalive`                            |
+| `20260828212443` | `tighten_reset_match_grants`               |
+| `20260903040437` | `update_tournament_format_settings`        |
+| `20260903040447` | `add_exhibition_match_stage`               |
+| `20260903040455` | `add_match_and_team_category`              |
+| `20260903040501` | `add_team_manual_tiebreak`                 |
+| `20260903040542` | `improve_recalculate_standings_tiebreakers` |
+| `20260903040649` | `add_draw_quarterfinals`                   |
+| `20260903040717` | `champion_on_final_finish`                 |
+| `20260903040818` | `seed_womens_match_and_reschedule`         |
+| `20260903050810` | `add_simulation_helpers`                   |
 
 El SQL de cada una está en `supabase/migrations/`.
 

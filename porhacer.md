@@ -2,8 +2,17 @@
 
 Sistema web para administrar y mostrar en vivo un torneo de futbol 5.
 Stack: React 19 + Vite + Tailwind v4 + React Router 7 (`frontend/`), Node +
-Express + TS (`backend/`), Supabase (Postgres + Realtime + Auth), proyecto
-`TU-PROYECTO`.
+Express + TS (`backend/`, NO se despliega), Supabase (Postgres + Realtime +
+Auth), proyecto `TU-PROYECTO`.
+
+> **Formato (actualizado)**: 9 equipos masculinos + 1 partido femenino de
+> exhibición. 3 grupos de 3, todos contra todos (2 partidos/equipo). Clasifican
+> **8 de 9** a cuartos: 2 por grupo + 2 mejores terceros; el peor 3.º queda
+> eliminado. Cuartos -> semis -> final -> campeon. Arranca 13:00, pausa
+> 15:00-15:50, termina ~18:00; cada partido ocupa ~12 min. El partido femenino
+> (categoria `FEMENINO`, `stage='EXHIBITION'`) no afecta tablas, cuadro ni
+> estadisticas masculinas. Todo configurable en `tournament_settings`
+> (`qualifiers_per_group`, `best_third_places`, `slot_minutes`, horarios).
 
 > El `porhacer.md` anterior (sitio del Ministerio) quedo obsoleto: este
 > proyecto se reconvirtio en la plataforma del torneo. Identidad visual: se
@@ -63,10 +72,44 @@ Express + TS (`backend/`), Supabase (Postgres + Realtime + Auth), proyecto
 - [x] Restyle completo a la paleta de marca (`brand-palette`): tokens en
       `index.css`, tema claro, logo real en headers + favicon, cero emojis
       (iconos de evento/estado pasados a lucide-react).
-- [ ] `/champion` - pantalla de campeon (subcampeon, goleador, MVP, fair
-      play, animacion). Requiere que algo setee `champion_team_id` /
-      `runner_up_team_id`.
-- [ ] Cuadro de eliminacion visual (bracket) - pagina o seccion en Home.
+- [x] `/champion` - pantalla de campeon (nombre + logo del campeon, resultado
+      de la final, subcampeon, goleador del torneo, plantel, fecha). Se llena
+      sola: el trigger `matches_after_finish` setea `champion_team_id` /
+      `runner_up_team_id` al finalizar la FINAL. Sin animacion / MVP / fair
+      play todavia.
+- [x] Cuadro de eliminacion visual (bracket) - `components/BracketView.tsx`
+      (QF -> SF -> FINAL), pagina publica `/bracket` ("Cuadro" en el nav) y
+      seccion en Home. Muestra clasificados + eliminado.
+- [x] Semaforo en las tablas de grupo: verde = clasifica / mejor 3.o, ambar =
+      repechaje (3.o mientras la fase no termina), rojo = eliminado. Tokens
+      `ok-*` / `warn-*` / `bad-*` en `index.css` (NO son de marca, solo estado).
+      `StandingsTable` + `StandingsLegend`, en `/standings` y en Home.
+- [x] `/tv` - **Modo TV / marcador deportivo** (kiosco, "TV" en el nav publico,
+      link "Salir" arriba-izq, indicador de conexion arriba-der). NO es
+      carrusel: marcador grande persistente (en vivo -> proximo + cuenta
+      regresiva -> DESCANSO -> campeon) + franja de las 3 tablas entre partidos.
+      **Banners a pantalla completa** disparados por los eventos del torneo
+      (hook `useTvEvents`: `match_events` por Realtime + sondeo 10 s):
+      - **GOL**: fondo con el color del equipo, escudo, "GOL" gigante, jugador
+        y marcador (animacion `tv-pop`).
+      - **TARJETA AMARILLA / ROJA**: tarjeta inclinada que "cae" (`tv-card-drop`)
+        + jugador + equipo.
+      - inicio / entretiempo / 2.o tiempo / final: panel de color + titulo.
+      La **tabla del grupo reaparece SOLO al final del partido** (~14 s), ya no
+      en cada gol. `wakeLock` para no dormir la pantalla.
+- [x] **Plan B de tiempo real**: todos los hooks de datos (`useMatches`,
+      `useStandings`, `useTeams`, `usePlayerStats`, `useMatch`, `useMatchEvents`,
+      `useTournamentPlayers`, `usePlayers`, `useTournament`) ahora ademas del
+      Realtime **re-consultan cada 15 s** (20 s el torneo) si la pestana esta
+      visible, y al volver la conexion (`online`) / la pestana. Asi se
+      actualiza aunque el WebSocket este bloqueado en esa red/dispositivo.
+      Canales de Realtime con nombre unico por instancia (`useId()`) para que
+      un mismo hook usado 2+ veces en un arbol no choque.
+- [x] "Zona de pruebas" en `/admin` (Resumen): botones **Simular torneo** (juega
+      todo al azar y cierra el torneo) y **Reiniciar a 0-0**. RPCs
+      `simulate_tournament` / `reset_tournament` (chequean `is_admin`, no tocan
+      config ni horarios, el partido femenino queda intacto). Confirmacion en 2
+      pasos, panel en rojo.
 - [x] Toasts en vivo con `sileo` (lib de toasts para React). `<Toaster/>` +
       `<TournamentToasts/>` en `main.tsx`; hook `useTournamentToasts` escucha
       Realtime (`match_events` INSERT + `tournaments` UPDATE) y dispara:
@@ -116,7 +159,12 @@ Express + TS (`backend/`), Supabase (Postgres + Realtime + Auth), proyecto
 - [x] `/admin/roulette` - ruleta SVG animada. Modos: Equipos, Jugadores,
       Sorteo de grupos. Quitar del sorteo / Restablecer. El sorteo de
       grupos asigna `teams.group_id` y guarda en `roulette_draws`;
-      "Registrar resultado" guarda un `RANDOM_SELECTION`.
+      "Registrar resultado" guarda un `RANDOM_SELECTION`. Los equipos
+      `FEMENINO` quedan fuera de los sorteos.
+- [x] `/admin/standings` - **Clasificacion**: 3 tablas por grupo con flechas
+      para el desempate manual (`teams.manual_tiebreak` -> `recalculate_standings`),
+      panel de "Clasificados a cuartos" + eliminado, y boton "Sortear cuartos"
+      (RPC `draw_quarterfinals`). Item nuevo en el nav admin.
 - [x] Nav admin en mobile (barra superior scrollable; el sidebar era
       `sm:` y no habia alternativa) + link "Panel de administracion" en el
       footer publico.
@@ -144,21 +192,28 @@ Express + TS (`backend/`), Supabase (Postgres + Realtime + Auth), proyecto
       ("Asignar el ultimo"). Toast (sileo) por cada equipo asignado
       ("Equipo N/9 asignado - A1 - <nombre>") + toast final "Sorteo completo".
 
-## Fase 4 - Logica pendiente  [pendiente]
+## Fase 4 - Logica pendiente  [en curso]
 
-- [ ] `calculateQualifiedTeams` / mejores terceros: poblar QF1..QF4 desde
-      standings (hoy los QF no tienen equipos). `best_third_places` sin usar.
-- [ ] Desempates completos: `recalculate_standings` hoy solo hace
-      PTS, luego DG, luego GF. Falta head-to-head / fair-play / sorteo del
-      `tiebreaker_order`.
-- [ ] Setear campeon/subcampeon al finalizar la final.
-- [ ] `matches_set_winner` no re-calcula `winner_team_id` si ya estaba
-      seteado: corregir el marcador de un partido ya finalizado que cambia
-      quien gano no actualiza el ganador (ni el bracket). Menor para MVP.
-- [ ] Volcar el esquema + seed a `supabase/migrations/` (hoy no hay archivo
-      SQL en el repo; `list_migrations` vacio).
+- [x] `calculateQualifiedTeams` / mejores terceros: RPC `draw_quarterfinals`
+      llena QF1..QF4 desde `standings` (3 primeros + 3 segundos + 2 mejores
+      terceros, sorteo con bombos evitando mismo grupo, peor 3.o eliminado).
+      Boton "Sortear cuartos" en `/admin/standings`. Editable a mano en
+      `/admin/matches`.
+- [~] Desempates: `recalculate_standings` ahora hace PTS -> DG -> GF ->
+      resultado entre los empatados (H2H) -> `teams.manual_tiebreak` (flechas
+      en `/admin/standings`) -> nombre. Falta fair-play / `RANDOM` del
+      `tiebreaker_order` (H2H no rompe un triple empate en grupos de 3: cae al
+      desempate manual, que es lo correcto).
+- [x] Setear campeon/subcampeon al finalizar la final (`matches_after_finish`;
+      `reset_match` de la FINAL los limpia).
+- [x] `matches_set_winner` recalcula `winner_team_id` en cada update
+      `FINALIZADO` con diferencia de gol: corregir el marcador de un partido ya
+      finalizado ahora sí actualiza el ganador y propaga por el cuadro.
+- [ ] Volcar el **esquema base** + seed a `supabase/migrations/` (las
+      migraciones incrementales sí están versionadas; falta el baseline).
 - [ ] Agregar `requireAdmin` a las rutas de partido del backend (hoy solo
       `requireAuth`; las RPC igual re-chequean admin, pero da 403 mas limpio).
+      El backend igual no se despliega.
 
 ## Pasos manuales (los hace la persona, no el asistente)
 
@@ -211,3 +266,15 @@ Express + TS (`backend/`), Supabase (Postgres + Realtime + Auth), proyecto
 - Todo lo configurable vive en `tournament_settings` - no hardcodear
   cantidades, horarios ni duraciones.
 - Un solo torneo activo a la vez (`fetchActiveTournament` = el mas reciente).
+- Categorias: `matches.category` / `teams.category` (`MASCULINO` / `FEMENINO`).
+  El femenino es 1 partido `stage='EXHIBITION'`; `recalculate_standings` y el
+  cuadro solo miran `MASCULINO`. La UI lo marca con `<CategoryBadge/>`.
+- Horarios en la base: hora local de Costa Rica (UTC-6, sin DST). El
+  cronograma del brief (13:00 grupos, 14:48 femenino, pausa, 15:50 cuartos,
+  16:45/16:57 semis, 17:20 final) se fijo una vez en la migracion
+  `seed_womens_match_and_reschedule`. Los huecos de preparacion de 7 min antes
+  de semis y final son fijos: si el admin pulsa "Recalcular horarios" en
+  `/admin/matches` se normalizan a `slot_minutes` (12) uniforme.
+- Desempate manual: `teams.manual_tiebreak` (mayor = mejor). No se toca desde
+  el cliente salvo por las flechas de `/admin/standings`, que luego llaman
+  `recalculate_standings`.

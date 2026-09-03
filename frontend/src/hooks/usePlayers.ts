@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { fetchPlayersByTeam } from '../services/players'
 import type { Player } from '../types/tournament'
@@ -8,6 +8,8 @@ export function usePlayers(teamId: string | undefined) {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
 
+  const channelId = useId().replace(/\W/g, '')
+
   useEffect(() => {
     if (!teamId) return
     let activo = true
@@ -16,7 +18,7 @@ export function usePlayers(teamId: string | undefined) {
     reload().then(() => activo && setLoading(false))
 
     const channel = supabase
-      .channel(`players-team-${teamId}`)
+      .channel(`players-team-${teamId}-${channelId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'players', filter: `team_id=eq.${teamId}` },
@@ -24,11 +26,21 @@ export function usePlayers(teamId: string | undefined) {
       )
       .subscribe()
 
+    // Plan B: si el WebSocket de Realtime está bloqueado en esta red/dispositivo,
+    // igual refrescamos cada 15 s (y al volver la conexión / la pestaña).
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') reload()
+    }, 15000)
+    const onOnline = () => reload()
+    window.addEventListener('online', onOnline)
+
     return () => {
       activo = false
+      window.clearInterval(poll)
+      window.removeEventListener('online', onOnline)
       supabase.removeChannel(channel)
     }
-  }, [teamId])
+  }, [teamId, channelId])
 
   return { players, loading }
 }

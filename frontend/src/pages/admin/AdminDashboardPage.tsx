@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarClock, Flag, Play, Radio, Square } from 'lucide-react'
+import { CalendarClock, Dice5, Eraser, Flag, FlaskConical, Play, Radio, Square } from 'lucide-react'
 import { useTournament } from '../../hooks/useTournament'
 import { useLiveMatch } from '../../hooks/useLiveMatch'
 import { useTeams } from '../../hooks/useTeams'
 import { useTournamentPlayers } from '../../hooks/useTournamentPlayers'
 import { usePlayerStats } from '../../hooks/usePlayerStats'
 import { StatCard } from '../../components/admin/StatCard'
-import { updateTournamentStatus } from '../../services/tournament'
+import {
+  updateTournamentStatus,
+  simulateTournament,
+  resetTournament,
+} from '../../services/tournament'
 import { toast } from '../../lib/toast'
 import { formatKickoff, formatKickoffDay } from '../../utils/matchLabels'
 import type { MatchWithTeams, Tournament } from '../../types/tournament'
@@ -31,6 +35,7 @@ export function AdminDashboardPage() {
   const { stats } = usePlayerStats(tournament?.id)
 
   const [working, setWorking] = useState(false)
+  const [labConfirm, setLabConfirm] = useState<'sim' | 'reset' | null>(null)
 
   if (loadingT || loadingM) {
     return <p className="py-24 text-center text-tinta-2">Cargando…</p>
@@ -39,6 +44,8 @@ export function AdminDashboardPage() {
     return <p className="py-24 text-center text-tinta-2">No hay un torneo configurado.</p>
   }
 
+  const mascTeams = teams.filter((t) => t.category !== 'FEMENINO')
+  const femTeams = teams.length - mascTeams.length
   const played = matches.filter((m) => m.status === 'FINALIZADO').length
   const pending = matches.filter((m) => m.status === 'PROGRAMADO').length
   const goals = matches
@@ -61,6 +68,25 @@ export function AdminDashboardPage() {
       toast.ok('Torneo actualizado', STATUS_LABEL[status])
     } catch (e) {
       toast.err(e, 'No se pudo actualizar el estado del torneo')
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function runLab(kind: 'sim' | 'reset') {
+    if (!tournament) return
+    setWorking(true)
+    setLabConfirm(null)
+    try {
+      if (kind === 'sim') {
+        await simulateTournament(tournament.id)
+        toast.ok('Torneo simulado', 'Resultados al azar cargados; mirá /standings, /bracket y /champion')
+      } else {
+        await resetTournament(tournament.id)
+        toast.ok('Torneo reiniciado', 'Todo en 0-0 y PROGRAMADO')
+      }
+    } catch (e) {
+      toast.err(e, kind === 'sim' ? 'No se pudo simular' : 'No se pudo reiniciar')
     } finally {
       setWorking(false)
     }
@@ -127,7 +153,12 @@ export function AdminDashboardPage() {
 
       {/* Números */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Equipos" value={teams.length} to="/admin/teams" />
+        <StatCard
+          label="Equipos"
+          value={mascTeams.length}
+          hint={femTeams > 0 ? `+ ${femTeams} femeninos` : undefined}
+          to="/admin/teams"
+        />
         <StatCard label="Jugadores" value={players.length} to="/admin/players" />
         <StatCard
           label="Partidos"
@@ -217,6 +248,72 @@ export function AdminDashboardPage() {
           )}
         </section>
       </div>
+
+      {/* Zona de pruebas — NO usar durante el torneo real.
+          translate="no" + key en el grupo de botones: evita que un traductor
+          del navegador (Google Translate, etc.) mueva nodos de texto y React
+          reviente con "removeChild is not a child of this node" al cambiar de
+          estado. */}
+      <section
+        translate="no"
+        className="notranslate flex flex-col gap-3 rounded-2xl border border-vino-400/40 bg-vino-50 p-4"
+      >
+        <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-vino-600 uppercase">
+          <FlaskConical className="h-4 w-4" />
+          <span>Zona de pruebas</span>
+        </div>
+        <p className="text-xs text-tinta-2">
+          Para demos y para ver cómo queda todo. <strong>Sobrescribe los resultados</strong> del
+          torneo (los horarios, equipos y config no se tocan; el partido femenino tampoco).
+        </p>
+        <div key={labConfirm ?? 'idle'} className="flex flex-wrap items-center gap-2">
+          {labConfirm === 'sim' || labConfirm === 'reset' ? (
+            <>
+              <span className="text-xs text-tinta-2">
+                {labConfirm === 'sim'
+                  ? '¿Simular un torneo completo al azar?'
+                  : '¿Borrar todos los resultados (volver a 0‑0)?'}
+              </span>
+              <button
+                type="button"
+                disabled={working}
+                onClick={() => runLab(labConfirm)}
+                className={`${btn} bg-vino-500 text-white hover:bg-vino-600`}
+              >
+                <span>{labConfirm === 'sim' ? 'Sí, simular' : 'Sí, reiniciar'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLabConfirm(null)}
+                className={`${btn} border border-linea bg-panel text-tinta-2 hover:bg-crema`}
+              >
+                <span>Cancelar</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled={working}
+                onClick={() => setLabConfirm('sim')}
+                className={`${btn} border border-vino-400/50 bg-panel text-vino-600 hover:bg-vino-100`}
+              >
+                <Dice5 className="h-4 w-4" />
+                <span>Simular torneo</span>
+              </button>
+              <button
+                type="button"
+                disabled={working}
+                onClick={() => setLabConfirm('reset')}
+                className={`${btn} border border-vino-400/50 bg-panel text-vino-600 hover:bg-vino-100`}
+              >
+                <Eraser className="h-4 w-4" />
+                <span>Reiniciar a 0‑0</span>
+              </button>
+            </>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

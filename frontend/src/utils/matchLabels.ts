@@ -1,4 +1,4 @@
-import type { MatchStatus, MatchStage } from '../types/tournament'
+import type { MatchStatus, MatchStage, MatchCategory, Match } from '../types/tournament'
 
 export const STATUS_LABELS: Record<MatchStatus, string> = {
   PROGRAMADO: 'Programado',
@@ -27,6 +27,7 @@ export const STAGE_LABELS: Record<MatchStage, string> = {
   SEMIFINAL: 'Semifinal',
   FINAL: 'Final',
   THIRD_PLACE: 'Tercer puesto',
+  EXHIBITION: 'Exhibición',
 }
 
 export const STAGE_LABELS_SHORT: Record<MatchStage, string> = {
@@ -35,6 +36,17 @@ export const STAGE_LABELS_SHORT: Record<MatchStage, string> = {
   SEMIFINAL: 'Semis',
   FINAL: 'Final',
   THIRD_PLACE: '3.º puesto',
+  EXHIBITION: 'Exhibición',
+}
+
+export const CATEGORY_LABELS: Record<MatchCategory, string> = {
+  MASCULINO: 'Masculino',
+  FEMENINO: 'Femenino',
+}
+
+/** El partido femenino es de exhibición: no cuenta para tablas, cuadro ni stats masculinas. */
+export function isWomensMatch(m: Pick<Match, 'category'>): boolean {
+  return m.category === 'FEMENINO'
 }
 
 export const LIVE_STATUSES: MatchStatus[] = ['CALENTAMIENTO', 'EN_JUEGO', 'DESCANSO']

@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { CalendarDays, Home, ListOrdered, Lock, Users2, Goal } from 'lucide-react'
+import { CalendarDays, GitBranch, Home, ListOrdered, Lock, MonitorPlay, Users2, Goal } from 'lucide-react'
 import { useTournament } from '../hooks/useTournament'
 import logo from '../assets/logo.png'
 
@@ -42,6 +42,10 @@ export function PublicLayout() {
               <ListOrdered className="h-4 w-4" />
               Tablas
             </NavLink>
+            <NavLink to="/bracket" className={navLinkClass}>
+              <GitBranch className="h-4 w-4" />
+              Cuadro
+            </NavLink>
             <NavLink to="/teams" className={navLinkClass}>
               <Users2 className="h-4 w-4" />
               Equipos
@@ -49,6 +53,10 @@ export function PublicLayout() {
             <NavLink to="/fixtures?tab=finalizados" className={navLinkClass}>
               <Goal className="h-4 w-4" />
               Resultados
+            </NavLink>
+            <NavLink to="/tv" className={navLinkClass}>
+              <MonitorPlay className="h-4 w-4" />
+              TV
             </NavLink>
           </nav>
         </div>

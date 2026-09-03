@@ -3,6 +3,7 @@ import { Link, NavLink, Navigate, Outlet } from 'react-router-dom'
 import {
   ExternalLink,
   LayoutDashboard,
+  ListOrdered,
   ShieldAlert,
   Trophy,
   UserRound,
@@ -25,6 +26,7 @@ const NAV: { to: string; label: string; icon: ComponentType<{ className?: string
   { to: '/admin/teams', label: 'Equipos', icon: Trophy },
   { to: '/admin/players', label: 'Jugadores', icon: UserRound },
   { to: '/admin/matches', label: 'Partidos', icon: Swords },
+  { to: '/admin/standings', label: 'Clasificación', icon: ListOrdered },
   { to: '/admin/roulette', label: 'Ruleta', icon: Dices },
 ]
 

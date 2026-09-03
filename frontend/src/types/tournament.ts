@@ -20,6 +20,7 @@ export type PlayerStats = Views['player_stats']['Row']
 export type MatchStatus = Database['public']['Enums']['match_status']
 export type MatchPeriod = Database['public']['Enums']['match_period']
 export type MatchStage = Database['public']['Enums']['match_stage']
+export type MatchCategory = Database['public']['Enums']['match_category']
 export type EventType = Database['public']['Enums']['event_type']
 export type UserRole = Database['public']['Enums']['user_role']
 

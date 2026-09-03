@@ -1,6 +1,7 @@
+import { useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, CalendarDays, Goal, ListOrdered } from 'lucide-react'
+import { ArrowRight, CalendarDays, GitBranch, Goal, ListOrdered, Trophy, XCircle } from 'lucide-react'
 import { useLiveMatch } from '../hooks/useLiveMatch'
 import { useTournament } from '../hooks/useTournament'
 import { useStandings } from '../hooks/useStandings'
@@ -10,9 +11,15 @@ import { LiveMatchHero } from '../components/LiveMatchHero'
 import { NextMatchCard } from '../components/NextMatchCard'
 import { PauseBanner, FinishedBanner } from '../components/StatusBanners'
 import { MatchRow } from '../components/MatchRow'
-import { StandingsTable } from '../components/StandingsTable'
+import { StandingsTable, StandingsLegend } from '../components/StandingsTable'
+import { BracketView } from '../components/BracketView'
+import { TeamBadge } from '../components/TeamBadge'
+import { CategoryBadge } from '../components/CategoryBadge'
 import { isDuringBreak, formatTimeOfDay } from '../utils/tournamentStatus'
 import { PERIOD_LABELS } from '../utils/matchClock'
+import { formatKickoff, isLive, isWomensMatch } from '../utils/matchLabels'
+import { computeQualification } from '../utils/qualifiers'
+import { groupStageDone } from '../hooks/useQualification'
 
 function SectionTitle({
   icon,
@@ -45,9 +52,20 @@ export function HomePage() {
   const { tournament, settings, loading: loadingTournament } = useTournament()
   const { matches, liveMatch, nextMatch, recentlyFinished, clock, loading: loadingMatches } =
     useLiveMatch(tournament?.id)
-  const { byGroup } = useStandings(tournament?.id)
+  const { standings } = useStandings(tournament?.id)
   const { groups, byId: groupsById } = useGroups(tournament?.id)
   const { topScorers } = usePlayerStats(tournament?.id)
+
+  const groupStageComplete = useMemo(() => groupStageDone(matches), [matches])
+  const qualification = useMemo(
+    () => computeQualification(standings, groups, settings, groupStageComplete),
+    [standings, groups, settings, groupStageComplete],
+  )
+  const womensMatch = useMemo(() => matches.find((m) => isWomensMatch(m)), [matches])
+  const hasBracket = useMemo(
+    () => matches.some((m) => ['QUARTERFINAL', 'SEMIFINAL', 'FINAL'].includes(m.stage)),
+    [matches],
+  )
 
   if (loadingTournament || loadingMatches || !settings) {
     return <p className="py-24 text-center text-tinta-2">Cargando…</p>
@@ -85,7 +103,47 @@ export function HomePage() {
         />
       ) : null}
 
+      {finalizado && tournament.champion_team_id && (
+        <Link
+          to="/champion"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-azul-200 bg-azul-50 px-4 py-3 text-sm font-bold text-azul-700 hover:bg-azul-100"
+        >
+          <Trophy className="h-4 w-4" />
+          Ver al campeón del torneo
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      )}
+
       {nextMatch && !finalizado && <NextMatchCard match={nextMatch} />}
+
+      {womensMatch && (
+        <section className="flex flex-col gap-3 rounded-3xl border border-viol-500/30 bg-panel p-6">
+          <div className="flex items-center gap-2">
+            <CategoryBadge category="FEMENINO" />
+            <span className="text-xs font-bold tracking-widest text-tinta-3 uppercase">
+              Partido femenino
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <TeamBadge team={womensMatch.home_team} />
+              <span className="text-sm font-semibold text-tinta-3">
+                {isLive(womensMatch.status) || womensMatch.status === 'FINALIZADO'
+                  ? `${womensMatch.home_score} – ${womensMatch.away_score}`
+                  : 'vs'}
+              </span>
+              <TeamBadge team={womensMatch.away_team} />
+            </div>
+            <p className="text-sm text-tinta-2">
+              {womensMatch.status === 'FINALIZADO'
+                ? 'Finalizado'
+                : isLive(womensMatch.status)
+                  ? 'En vivo'
+                  : formatKickoff(womensMatch.scheduled_at)}
+            </p>
+          </div>
+        </section>
+      )}
 
       {recent.length > 0 && (
         <section className="flex flex-col gap-3">
@@ -100,11 +158,52 @@ export function HomePage() {
         </section>
       )}
 
+      {groupStageComplete && qualification.qualified.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <SectionTitle icon={<Trophy className="h-4 w-4" />} to="/bracket">
+            Clasificados a cuartos
+          </SectionTitle>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {qualification.qualified.map(({ standing, label }) => (
+              <div
+                key={standing.team_id}
+                className="flex flex-col gap-1 rounded-xl border border-azul-200 bg-azul-50 px-3 py-2"
+              >
+                <span className="text-[10px] font-semibold text-azul-600 uppercase">{label}</span>
+                <TeamBadge team={standing.team} size="sm" />
+              </div>
+            ))}
+          </div>
+          {qualification.eliminated.map((s) => (
+            <div
+              key={s.team_id}
+              className="flex items-center gap-2 rounded-xl border border-vino-400/40 bg-vino-50 px-3 py-2 text-sm"
+            >
+              <TeamBadge team={s.team} size="sm" />
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-vino-600">
+                <XCircle className="h-3.5 w-3.5" />
+                Eliminado
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {hasBracket && (groupStageComplete || matches.some((m) => m.stage !== 'GROUP' && m.home_team_id)) && (
+        <section className="flex flex-col gap-3">
+          <SectionTitle icon={<GitBranch className="h-4 w-4" />} to="/bracket">
+            Cuadro de eliminación
+          </SectionTitle>
+          <BracketView matches={matches} />
+        </section>
+      )}
+
       {groups.length > 0 && (
         <section className="flex flex-col gap-3">
           <SectionTitle icon={<ListOrdered className="h-4 w-4" />} to="/standings">
             Tabla de posiciones
           </SectionTitle>
+          <StandingsLegend statuses={new Set(qualification.statusByTeam.values())} />
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {groups.map((g) => (
               <div key={g.id} className="flex flex-col gap-2">
@@ -112,8 +211,9 @@ export function HomePage() {
                   Grupo {g.name}
                 </h3>
                 <StandingsTable
-                  rows={byGroup.get(g.id) ?? []}
+                  rows={standings.filter((s) => s.group_id === g.id)}
                   qualifiers={settings.qualifiers_per_group}
+                  statusByTeam={qualification.statusByTeam}
                 />
               </div>
             ))}
@@ -154,8 +254,8 @@ export function HomePage() {
         <div>
           <p className="text-xs text-tinta-3 uppercase">Formato</p>
           <p className="mt-1 text-sm text-tinta">
-            {settings.team_count} equipos · {settings.group_count} grupos de{' '}
-            {settings.teams_per_group}
+            {settings.team_count} equipos masculinos + 1 partido femenino · {settings.group_count}{' '}
+            grupos de {settings.teams_per_group}
           </p>
         </div>
         <div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { fetchMatchById } from '../services/matches'
 import type { MatchWithTeams } from '../types/tournament'
@@ -26,6 +26,8 @@ export function useMatch(matchId: string | undefined) {
     }
   }, [matchId])
 
+  const channelId = useId().replace(/\W/g, '')
+
   useEffect(() => {
     if (!matchId) return
     aliveRef.current = true
@@ -33,7 +35,7 @@ export function useMatch(matchId: string | undefined) {
     reload()
 
     const channel = supabase
-      .channel(`match-${matchId}`)
+      .channel(`match-${matchId}-${channelId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'matches', filter: `id=eq.${matchId}` },
@@ -43,11 +45,21 @@ export function useMatch(matchId: string | undefined) {
       )
       .subscribe()
 
+    // Plan B: si el WebSocket de Realtime está bloqueado en esta red/dispositivo,
+    // igual refrescamos cada 15 s (y al volver la conexión / la pestaña).
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') reload()
+    }, 15000)
+    const onOnline = () => reload()
+    window.addEventListener('online', onOnline)
+
     return () => {
       aliveRef.current = false
+      window.clearInterval(poll)
+      window.removeEventListener('online', onOnline)
       supabase.removeChannel(channel)
     }
-  }, [matchId, reload])
+  }, [matchId, reload, channelId])
 
   return { match, loading, error, refetch: reload }
 }

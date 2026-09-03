@@ -13,7 +13,9 @@ import { TeamsPage } from './pages/TeamsPage'
 import { TeamDetailPage } from './pages/TeamDetailPage'
 import { FixturesPage } from './pages/FixturesPage'
 import { StandingsPage } from './pages/StandingsPage'
+import { BracketPage } from './pages/BracketPage'
 import { ChampionPage } from './pages/ChampionPage'
+import { TvPage } from './pages/TvPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { AdminLoginPage } from './pages/admin/AdminLoginPage'
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
@@ -21,6 +23,7 @@ import { AdminTeamsPage } from './pages/admin/AdminTeamsPage'
 import { AdminPlayersPage } from './pages/admin/AdminPlayersPage'
 import { AdminMatchesPage } from './pages/admin/AdminMatchesPage'
 import { AdminMatchControlPage } from './pages/admin/AdminMatchControlPage'
+import { AdminStandingsPage } from './pages/admin/AdminStandingsPage'
 import { AdminRoulettePage } from './pages/admin/AdminRoulettePage'
 
 createRoot(document.getElementById('root')!).render(
@@ -37,9 +40,12 @@ createRoot(document.getElementById('root')!).render(
             <Route path="teams/:id" element={<TeamDetailPage />} />
             <Route path="fixtures" element={<FixturesPage />} />
             <Route path="standings" element={<StandingsPage />} />
+            <Route path="bracket" element={<BracketPage />} />
             <Route path="champion" element={<ChampionPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
+
+          <Route path="tv" element={<TvPage />} />
 
           <Route path="admin/login" element={<AdminLoginPage />} />
           <Route path="admin" element={<AdminLayout />}>
@@ -48,6 +54,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="players" element={<AdminPlayersPage />} />
             <Route path="matches" element={<AdminMatchesPage />} />
             <Route path="matches/:id" element={<AdminMatchControlPage />} />
+            <Route path="standings" element={<AdminStandingsPage />} />
             <Route path="roulette" element={<AdminRoulettePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

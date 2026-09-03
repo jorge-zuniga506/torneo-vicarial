@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CalendarClock } from 'lucide-react'
 import { TeamBadge } from './TeamBadge'
+import { CategoryBadge } from './CategoryBadge'
 import { formatCountdown } from '../utils/tournamentStatus'
 import type { MatchWithTeams } from '../types/tournament'
 
@@ -16,6 +17,7 @@ export function NextMatchCard({ match }: { match: MatchWithTeams }) {
       <div className="mb-4 flex items-center gap-2 text-xs font-bold tracking-widest text-azul-600 uppercase">
         <CalendarClock className="h-4 w-4" />
         Próximo partido
+        <CategoryBadge category={match.category} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-6">
         <div className="flex items-center gap-6">

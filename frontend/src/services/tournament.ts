@@ -50,6 +50,24 @@ export async function updateTournamentStatus(
   return data
 }
 
+/**
+ * Herramientas de prueba/demo (RPC en Postgres, chequean `is_admin()`):
+ *  - `simulateTournament`: resetea y juega un torneo entero al azar (grupos,
+ *    sorteo de cuartos, llaves, campeón) y deja el torneo FINALIZADO.
+ *  - `resetTournament`: deja todo en 0-0 / PROGRAMADO (el partido femenino
+ *    queda intacto), estado IN_PROGRESS.
+ * No tocan la config ni los horarios.
+ */
+export async function simulateTournament(tournamentId: string): Promise<void> {
+  const { error } = await supabase.rpc('simulate_tournament', { p_tournament_id: tournamentId })
+  if (error) throw error
+}
+
+export async function resetTournament(tournamentId: string): Promise<void> {
+  const { error } = await supabase.rpc('reset_tournament', { p_tournament_id: tournamentId })
+  if (error) throw error
+}
+
 /** Actualiza la config del torneo (RLS: `tournament_settings_admin_update`). */
 export async function updateTournamentSettings(
   tournamentId: string,

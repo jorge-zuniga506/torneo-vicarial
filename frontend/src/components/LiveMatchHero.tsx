@@ -1,6 +1,7 @@
 import { ArrowLeftRight, Flag, Goal, Pause, Play, RectangleVertical, Radio, Timer } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { TeamBadge } from './TeamBadge'
+import { CategoryBadge } from './CategoryBadge'
 import { useMatchEvents } from '../hooks/useMatchEvents'
 import type { MatchWithTeams } from '../types/tournament'
 
@@ -48,6 +49,7 @@ export function LiveMatchHero({
       <div className="mb-6 flex items-center justify-center gap-2">
         <Radio className="h-4 w-4 animate-pulse-live text-vino-500" />
         <span className="text-xs font-bold tracking-widest text-vino-600 uppercase">En vivo</span>
+        <CategoryBadge category={match.category} />
         {match.group_id && <span className="text-xs font-medium text-tinta-3">· {match.venue}</span>}
       </div>
 
